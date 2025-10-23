@@ -4,18 +4,17 @@
 #include "ScenePrimitives.h"
 
 #include <vector>
-
+#include <string>
 
 // Stores the entire scene
 class Scene {
 public:
 	Scene() {}
-	~Scene();
 
-	int imageWidth = 640;
-	int imageHeight = 480;
+	int imageWidth;
+	int imageHeight;
 
-	const char *outputImage = "raytraced.bmp";
+	std::string outputImage;
 
 	int maxDepth; // Maximum recursion depth for reflected and refracted rays
 

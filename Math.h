@@ -3,15 +3,6 @@
 
 #include <math.h>
 
-// R, G, and B float values between 0-1
-// Default is black
-struct Color {
-	float r, g, b;
-
-    Color(float r, float g, float b) : r(r), g(g), b(b) {}
-    Color() : r(0), g(0), b(0) {}
-};
-
 // Default is origin
 class Vec3f {
 public:
@@ -44,6 +35,7 @@ public:
 
 
 // Floating-point quaternion in (w, x, y, z) convention
+// Default is identity
 class Quaternion {
 public:
 	Quaternion() {}		// Will be the indentity quaternion
@@ -62,6 +54,29 @@ public:
 	float z = 0.f;
 	
 	Quaternion operator*(const Quaternion &q2) const;
+};
+
+// R, G, and B float values between 0-1
+// Default is black
+class Color {
+public:
+    Color() {}
+    Color(float r, float g, float b) : r(r), g(g), b(b) {}
+	Color(const Color &c2) : r(c2.r), g(c2.g), b(c2.b) {}
+	
+	float r = 0.f;
+	float g = 0.f;
+	float b = 0.f;
+
+	Color operator+(const Color &v2) const;
+	Color operator-(const Color &v2) const;
+
+	// We want symmetry for these operators
+
+	friend Color operator*(float lhs, const Color &rhs);
+	friend Color operator*(const Color &lhs, float rhs);
+	friend Color operator/(float lhs, const Color &rhs);
+	friend Color operator/(const Color &lhs, float rhs);
 };
 
 #endif

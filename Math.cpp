@@ -78,3 +78,26 @@ Quaternion Quaternion::operator*(const Quaternion &q2) const {
 						w * q2.w - x * q2.x - y * q2.y - z * q2.z	);
 }
 
+Color Color::operator+(const Color &v2) const {
+	return Color(r + v2.r, g + v2.g, b + v2.b);
+}
+
+Color Color::operator-(const Color &v2) const {
+	return Color(r - v2.r, g - v2.g, b - v2.b);
+}
+
+Color operator*(float lhs, const Color &rhs) {
+	return Color(lhs * rhs.r, lhs * rhs.g, lhs * rhs.b);
+}
+
+Color operator*(const Color &lhs, float rhs) {
+	return Color(lhs.r * rhs, lhs.g * rhs, lhs.b * rhs);
+}
+
+Color operator/(float lhs, const Color &rhs) {
+	return Color(lhs / rhs.r, lhs / rhs.g, lhs / rhs.b);
+}
+
+Color operator/(const Color &lhs, float rhs) {
+	return Color(lhs.r / rhs, lhs.g / rhs, lhs.b / rhs);
+}
