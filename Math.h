@@ -4,6 +4,7 @@
 #include <math.h>
 
 // R, G, and B float values between 0-1
+// Default is black
 struct Color {
 	float r, g, b;
 

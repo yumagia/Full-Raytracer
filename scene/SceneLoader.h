@@ -2,13 +2,12 @@
 #define SCENELOADER_INCLUDED
 
 #include "Scene.h"
-#include <iostream>
-#include <fstream>
+
 
 // Loader class for scenes
 class SceneLoader {
 public:
-	Scene ParseSceneFile(std::string fileName);
+	Scene *ParseSceneFile(const char *fileName);
 
 private:
 	void removeLeading(std::string &s);

@@ -7,15 +7,15 @@ struct Camera {
 	Vec3f cameraPos;
 	Vec3f cameraFwd;
 	Vec3f cameraUp;
+    Vec3f cameraRight;
 	float halfAngleFov;
 };
 
-struct Background {
-    Color background;
-};
+typedef Color Background;
 
 struct Material {
     Color ambient, diffuse, specular, transmissive;
+    float specularCoeff, refractionCoeff;
 };
 
 struct Sphere {
@@ -36,11 +36,10 @@ struct PointLight {
 
 struct SpotLight {
     Vec3f origin, direction;
+    Color intensity;
     float angle1, angle2;
 };
 
-struct AmbientLight {
-    Color ambient;
-};
+typedef Color AmbientLight;
 
 #endif
