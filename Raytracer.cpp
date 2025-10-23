@@ -27,6 +27,7 @@ bool RaySphereIntersect(Vec3f start, Vec3f dir, Vec3f spherePos, float r) {
 int main(int argc, char** argv) {
 	if(argc != 2) {
 		std::cerr << "Usage: ./a.out scenefile" << std::endl;
+		return 0;
 	}
 
 	const char *fileName = argv[1];
@@ -41,9 +42,9 @@ int main(int argc, char** argv) {
 	float halfH = imgH/2;
 	float d = halfH / tanf(camera.halfAngleFov * (M_PI / 180.0f));
 
-	Image outputImage = Image(imgW, imgH);
-	for(int j = 0; j < imgH; j++) {
-		for(int i = 0; i < imgW; i++) {
+	Image outputImage = Image(raytracerScene->imageWidth, raytracerScene->imageHeight);
+	for(int j = 0; j < raytracerScene->imageHeight; j++) {
+		for(int i = 0; i < raytracerScene->imageWidth; i++) {
 			float u = (halfW - imgW * ((i + 0.5) / imgW));
 			float v = (halfH - imgH * ((i + 0.5) / imgH));
 			Vec3f p = camera.eye - d * camera.fwd + u * camera.right + v * camera.up;
@@ -51,17 +52,14 @@ int main(int argc, char** argv) {
 			rayDir.Normalize();
 			
 			bool hit = RaySphereIntersect(camera.eye, rayDir, Vec3f(0, 0, 0), 1);
-			Color color;
+			Color color = Color(0, 0, 0);
 			if (hit) {
 				color = Color(1, 1, 1);
-			}
-			else {
-				color = Color(0, 0, 0);
 			}
 			outputImage.SetPixel(i, j, color);
 		}
 	}
 
-	outputImage.Write(fileName);
+	outputImage.Write(raytracerScene->outputImage);
 	return 0;
 }

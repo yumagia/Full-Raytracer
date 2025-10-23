@@ -22,7 +22,7 @@ Scene *SceneLoader::ParseSceneFile(const char *fileName) {
 	Scene *raytracerScene = new Scene;
 
 	// Fill the default fields
-	raytracerScene->fileName = "raytraced.bmp";
+	raytracerScene->outputImage = "raytraced.bmp";
 	raytracerScene->imageWidth = 640;
 	raytracerScene->imageHeight = 480;
 	raytracerScene->maxDepth = 5;
@@ -110,7 +110,7 @@ Scene *SceneLoader::ParseSceneFile(const char *fileName) {
 
 			s.erase(0, arg.length());
 			sceneCamera.halfAngleFov = stof(s);
-			}
+			} else
 			if(arg == "film_resolution:") {
 				s.erase(0, arg.length());
 				RemoveLeading(s);
@@ -124,7 +124,7 @@ Scene *SceneLoader::ParseSceneFile(const char *fileName) {
 			} else
 			if(arg == "output_image") {
 				s.erase(0, arg.length());
-      			raytracerScene->fileName = s.c_str();
+      			raytracerScene->outputImage = s.c_str();
 			} else
 			if(arg == "sphere:") {
 				s.erase(0, arg.length());

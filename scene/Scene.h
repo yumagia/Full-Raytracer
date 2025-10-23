@@ -15,7 +15,7 @@ public:
 	int imageWidth = 640;
 	int imageHeight = 480;
 
-	const char *fileName = "raytraced.bmp";
+	const char *outputImage = "raytraced.bmp";
 
 	int maxDepth; // Maximum recursion depth for reflected and refracted rays
 

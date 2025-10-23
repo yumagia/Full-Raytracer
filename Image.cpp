@@ -1,8 +1,11 @@
 #include "Image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION //only place once in one .cpp file
 #include "stb_image_write.h"
 
 Image::Image(int w, int h) {
-	pixels = new Color[w * h];
+	width = w;
+	height = h;
+	pixels = new Color[width * height];
 }
 
 Image::~Image() {
