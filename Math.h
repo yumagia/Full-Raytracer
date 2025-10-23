@@ -3,6 +3,15 @@
 
 #include <math.h>
 
+// R, G, and B float values between 0-1
+struct Color {
+	float r, g, b;
+
+    Color(float r, float g, float b) : r(r), g(g), b(b) {}
+    Color() : r(0), g(0), b(0) {}
+};
+
+// Default is origin
 class Vec3f {
 public:
 	Vec3f() {}
@@ -47,23 +56,6 @@ public:
 	float m_z = 0.f;
 	
 	Quaternion operator*(const Quaternion &q2) const;
-};
-
-// R, G, and B float values between 0-1
-class Color3f {
-public:
-	Color3f() {}
-	Color3f(float r, float g, float b) : m_r(r), m_g(g), m_b(b) {}
-	Color3f(const Color3f &c2) : m_r(c2.m_r), m_g(c2.m_g), m_b(c2.m_b) {}
-
-	float m_r = 0.0;
-	float m_g = 0.0;
-	float m_b = 0.0;
-
-	Color3f operator+(const Color3f &c2) const;
-	Color3f operator-(const Color3f &c2) const;
-	Color3f operator*(float s) const;
-	Color3f operator/(float s) const;
 };
 
 #endif

@@ -1,4 +1,4 @@
-#include "Math.hpp"
+#include "Math.h"
 
 float Vec3f::Normalize() {
 	float l = Length();
@@ -70,18 +70,3 @@ Quaternion Quaternion::operator*(const Quaternion &q2) const {
 						m_w * q2.m_w - m_x * q2.m_x - m_y * q2.m_y - m_z * q2.m_z	);
 }
 
-Color3f Color3f::operator+(const Color3f &v2) const {
-	return Color3f(m_r + v2.m_r, m_g + v2.m_g, m_b + v2.m_b);
-}
-
-Color3f Color3f::operator-(const Color3f &v2) const {
-	return Color3f(m_r - v2.m_r, m_g - v2.m_g, m_b - v2.m_b);
-}
-
-Color3f Color3f::operator*(float s) const {
-	Color3f(m_r * s, m_g * s, m_b * s);
-}
-
-Color3f Color3f::operator/(float s) const {
-	Color3f(m_r / s, m_g / s, m_b / s);
-}
