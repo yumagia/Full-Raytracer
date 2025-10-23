@@ -16,25 +16,30 @@ struct Color {
 class Vec3f {
 public:
 	Vec3f() {}
-	Vec3f(float x, float y, float z) : m_x(x), m_y(y), m_z(z) {}
-	Vec3f(const Vec3f &v2) : m_x(v2.m_x), m_y(v2.m_y), m_z(v2.m_z) {}
+	Vec3f(float x, float y, float z) : x(x), y(y), z(z) {}
+	Vec3f(const Vec3f &v2) : x(v2.x), y(v2.y), z(v2.z) {}
 
 	float Length() {
-		return sqrt(m_x * m_x + m_y * m_y + m_z * m_z);
+		return sqrt(x * x + y * y + z * z);
 	}
 
 	float Normalize();
 	Vec3f Cross(const Vec3f &v2) const;
 	float Dot(const Vec3f &v2) const;
 
-	float m_x = 0.f;
-	float m_y = 0.f;
-	float m_z = 0.f;
+	float x = 0.f;
+	float y = 0.f;
+	float z = 0.f;
 
 	Vec3f operator+(const Vec3f &v2) const;
 	Vec3f operator-(const Vec3f &v2) const;
-	Vec3f operator*(float s) const;
-	Vec3f operator/(float s) const;
+
+	// We want symmetry for these operators
+
+	friend Vec3f operator*(float lhs, const Vec3f &rhs);
+	friend Vec3f operator*(const Vec3f &lhs, float rhs);
+	friend Vec3f operator/(float lhs, const Vec3f &rhs);
+	friend Vec3f operator/(const Vec3f &lhs, float rhs);
 };
 
 
@@ -42,8 +47,8 @@ public:
 class Quaternion {
 public:
 	Quaternion() {}		// Will be the indentity quaternion
-    Quaternion(float w, float x, float y, float z) : m_w(w), m_x(x), m_y(y), m_z(z) {}
-	Quaternion(const Quaternion &q2) : m_w(q2.m_w), m_x(q2.m_x), m_y(q2.m_y), m_z(q2.m_z) {}
+    Quaternion(float w, float x, float y, float z) : w(w), x(x), y(y), z(z) {}
+	Quaternion(const Quaternion &q2) : w(q2.w), x(q2.x), y(q2.y), z(q2.z) {}
 
 	Quaternion(const Vec3f &axis, float angle); // Create from an axis-angle
 
@@ -51,10 +56,10 @@ public:
 	void Normalize();
 	Vec3f RotateVector(const Vec3f &v) const;
 
-	float m_w = 1.f;
-	float m_x = 0.f;
-	float m_y = 0.f;
-	float m_z = 0.f;
+	float w = 1.f;
+	float x = 0.f;
+	float y = 0.f;
+	float z = 0.f;
 	
 	Quaternion operator*(const Quaternion &q2) const;
 };

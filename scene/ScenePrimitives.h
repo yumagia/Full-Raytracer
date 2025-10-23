@@ -4,10 +4,10 @@
 #include "Math.h"
 
 struct Camera {
-	Vec3f cameraPos;
-	Vec3f cameraFwd;
-	Vec3f cameraUp;
-    Vec3f cameraRight;
+	Vec3f eye;
+	Vec3f fwd;
+	Vec3f up;
+    Vec3f right;
 	float halfAngleFov;
 };
 

@@ -1,4 +1,5 @@
 #include "Image.h"
+#include "stb_image_write.h"
 
 Image::Image(int w, int h) {
 	pixels = new Color[w * h];

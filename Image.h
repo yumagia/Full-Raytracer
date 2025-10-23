@@ -1,7 +1,6 @@
 #ifndef IMAGE_INCLUDED
 #define IMAGE_INCLUDED
 
-#include "stb_image_write.h"
 #include "Math.h"
 
 #include <math.h>
