@@ -10,6 +10,12 @@ float Vec3f::Normalize() {
 	return l;
 }
 
+void Vec3f::Negate() {
+	x = -x;
+	y = -y;
+	z = -z;
+}
+
 Vec3f Vec3f::Cross(const Vec3f &v2) const {
 	return Vec3f(	y*v2.z - z*v2.y,
 					z*v2.x - x*v2.z,
@@ -84,6 +90,14 @@ Color Color::operator+(const Color &v2) const {
 
 Color Color::operator-(const Color &v2) const {
 	return Color(r - v2.r, g - v2.g, b - v2.b);
+}
+
+Color Color::operator*(const Color &v2) const {
+	return Color(r * v2.r, g * v2.g, b * v2.b);
+}
+
+Color Color::operator/(const Color &v2) const {
+	return Color(r / v2.r, g / v2.g, b / v2.b);
 }
 
 Color operator*(float lhs, const Color &rhs) {

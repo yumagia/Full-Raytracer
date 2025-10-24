@@ -15,6 +15,7 @@ public:
 	}
 
 	float Normalize();
+	void Negate();
 	Vec3f Cross(const Vec3f &v2) const;
 	float Dot(const Vec3f &v2) const;
 
@@ -70,6 +71,8 @@ public:
 
 	Color operator+(const Color &v2) const;
 	Color operator-(const Color &v2) const;
+	Color operator*(const Color &v2) const;
+	Color operator/(const Color &v2) const;
 
 	// We want symmetry for these operators
 

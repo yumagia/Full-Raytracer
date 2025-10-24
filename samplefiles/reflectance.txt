@@ -1,0 +1,31 @@
+#Simple sphere scene
+
+#Simple sphere: Scene
+camera_pos: 0 2 -10
+camera_fwd: 0 .1 -.9 
+camera_up:  0 1 0
+camera_fov_ha: 26
+output_image: spheres2.png
+
+#"ground" sphere
+material: .75 .75 .75 .75 .75 .75 .3 .3 .3 32 .2 .2 .2 1.5
+sphere: 0 -50 0 50
+
+#green sphere
+material: 0 .2 0 0 .2 0 .06 .06 .06 16 .8 .8 .8  1.1
+sphere: 0 1.25 0 1
+
+#blue sphere
+material: 0 0 1 0 0 1 1 1 1 16 0 0 0 1.0
+sphere: 3 1.5 0 1.25
+
+material: .1 .2 .1 .35 .7 .35 .3 .3 .3 16 .35 .7 .35 1
+sphere: -3 1 -4 1
+
+#white overhead light
+point_light: 10 10 10 0 5 0
+point_light: 50 50 50 10 5 -5
+ambient_light: .35 .35 .35
+background: .05 .05 .05
+
+max_depth: 2
