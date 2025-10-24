@@ -1,0 +1,26 @@
+#Simple sphere: Scene
+camera_pos: 0 5 -5
+camera_fwd: 0 0.9 -0.6
+camera_up:  0.2 0 0.7
+camera_fov_ha: 35
+output_image: cows-angle2.png
+
+#"ground" sphere:
+material: .25 .65 .15 .25 .65 .15 .1 .1 .1 4 .05 .05 .05 1.5
+sphere: 0 -50 0 50
+
+material: 0.5 0.25 0.15 0.5 0.25 0.15 .1 .1 .1 4 0 0 0 1
+sphere: -3 1 0 1
+
+material: 0.5 0.5 0.5 0.5 0.5 0.5 .1 .1 .1 4 0 0 0 1
+sphere: 0 1 0 1
+
+material: 0.15 0.15 0.15 0.15 0.15 0.15 .1 .1 .1 4 0 0 0 1
+sphere: 3 1 0 1
+
+#directional overhead light
+directional_light: 3 3 3 0.5 -0.7 0.45
+ambient_light: .25 .55 .75
+background: .25 .55 .75
+
+max_depth: 5

@@ -211,7 +211,7 @@ int main(int argc, char** argv) {
 				color = color + RayTraceScene(camera.eye, rayDir, raytracerScene, false, 1);
 			}
 
-			color = color / 9;
+			color = color / SAMPLE_COUNT;
 
 			outputImage.SetPixel(i, j, color);
 		}

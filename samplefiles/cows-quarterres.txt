@@ -1,0 +1,27 @@
+#Simple sphere: Scene
+film_resolution: 160 120
+camera_pos: 0 2 -5
+camera_fwd: 0 0.3 -0.8
+camera_up:  0 1 0
+camera_fov_ha: 35
+output_image: cows-quarterres.png
+
+#"ground" sphere:
+material: .25 .65 .15 .25 .65 .15 .1 .1 .1 4 .05 .05 .05 1.5
+sphere: 0 -50 0 50
+
+material: 0.5 0.25 0.15 0.5 0.25 0.15 .1 .1 .1 4 0 0 0 1
+sphere: -3 1 0 1
+
+material: 0.5 0.5 0.5 0.5 0.5 0.5 .1 .1 .1 4 0 0 0 1
+sphere: 0 1 0 1
+
+material: 0.15 0.15 0.15 0.15 0.15 0.15 .1 .1 .1 4 0 0 0 1
+sphere: 3 1 0 1
+
+#directional overhead light
+directional_light: 3 3 3 0.5 -0.7 0.45
+ambient_light: .25 .55 .75
+background: .25 .55 .75
+
+max_depth: 5
