@@ -3,24 +3,29 @@ camera_pos: 0 2 -5
 camera_fwd: 0 0.3 -0.8
 camera_up:  0 1 0
 camera_fov_ha: 35
-output_image: multilit-spheres.png
+output_image: multilit-sphere.png
 
 #"ground" sphere:
-material: .25 .65 .15 .25 .65 .15 .1 .1 .1 4 .05 .05 .05 1.5
+material: 0.5 0.5 0.5 .25 .65 .15 .1 .1 .1 4 .05 .05 .05 1.5
 sphere: 0 -50 0 50
-
-material: 0.5 0.5 0.5 0.5 0.5 0.5 .3 .3 .3 32 .95 .95 .95 0.5
-sphere: -3 1 0 1
 
 material: 0.5 0.5 0.5 0.5 0.5 0.5 .3 .3 .3 32 .95 .95 .95 1
 sphere: 0 1 0 1
 
-material: 0.5 0.5 0.5 0.5 0.5 0.5 .3 .3 .3 32 .95 .95 .95 1.5
-sphere: 3 1 0 1
+#directional overhead lights
+directional_light: 0.2 0 0 0.5 -0.7 0.45
+directional_light: 0.2 0.2 0 0 -0.7 0.45
+directional_light: 0.2 0 0.2 -0.5 -0.7 0.45
 
-#directional overhead light
-directional_light: 1 1 1 0.5 -0.7 0.45
-ambient_light: .25 .55 .75
-background: .25 .55 .75
+directional_light: 0 0 0.2 0.5 -0.7 0.45
 
-max_depth: 5
+directional_light: 0 0.2 0.2 0.5 -0.7 0.45
+directional_light: 0.2 0 0.2 0.5 -0.7 0
+directional_light: 0 0.2 0 0.5 -0.7 -0.45
+
+directional_light: 0 0 0.2 -0.5 -0.7 -0.45
+
+ambient_light: .15 .15 .15
+background: 0 0 0
+
+max_depth: 3
