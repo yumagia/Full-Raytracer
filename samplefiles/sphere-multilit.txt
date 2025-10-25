@@ -9,7 +9,7 @@ output_image: multilit-sphere.png
 material: 0.5 0.5 0.5 .25 .65 .15 .1 .1 .1 4 .05 .05 .05 1.5
 sphere: 0 -50 0 50
 
-material: 0.5 0.5 0.5 0.5 0.5 0.5 .3 .3 .3 32 .95 .95 .95 1
+material: 0.5 0.5 0.5 0.5 0.5 0.5 .3 .3 .3 32 .95 .95 .95 1.5
 sphere: 0 1 0 1
 
 #directional overhead lights
