@@ -19,7 +19,7 @@ material: 0.5 0.5 0.5 0.5 0.5 0.5 .3 .3 .3 32 .95 .95 .95 1.5
 sphere: 3 1 0 1
 
 #directional overhead light
-directional_light: 3 3 3 0.5 -0.7 0.45
+directional_light: 1 1 1 0.5 -0.7 0.45
 ambient_light: .25 .55 .75
 background: .25 .55 .75
 

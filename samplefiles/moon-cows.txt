@@ -19,6 +19,6 @@ material: 0.15 0.15 0.15 0.15 0.15 0.15 .1 .1 .1 4 0 0 0 1
 sphere: 3 1 0 1
 
 #directional overhead light
-directional_light: 3 3 3 0.5 -0.7 0.45
+directional_light: 1 1 1 0.5 -0.7 0.45
 
 max_depth: 5

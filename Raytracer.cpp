@@ -8,9 +8,9 @@
 
 #define SAMPLE_COUNT 9
 
-#define KC 0.02
-#define KL 0.03
-#define KQ 0.04
+#define KC 2
+#define KL 1
+#define KQ 0.2
 
 #define MAX_T 1000
 #define RAY_EPS 0.0001		// Prevents acne
@@ -94,7 +94,7 @@ Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool hit
 			Vec3f rayReflected = ((2 * lightDir.Dot(n)) * n) - lightDir;
 			float specular = std::clamp(rayReflected.Dot(v), 0.f, 1.f);
 
-			shade = shade + material.diffuse * diffuse + material.specular * specular;
+			shade = shade + directionalLight.intensity * material.diffuse * diffuse + directionalLight.intensity * material.specular * specular;
 		}
 	}
 
@@ -110,7 +110,7 @@ Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool hit
 			float specular = powf(std::clamp(rayReflected.Dot(v), 0.f, 1.f), material.specularCoeff);
 
 			float falloff = 1 / (KC + KL * dist + KQ * (dist * dist));
-			shade = shade + falloff * (material.diffuse * diffuse + material.specular * specular);
+			shade = shade + falloff * (material.diffuse * pointLight.intensity * diffuse + material.specular * pointLight.intensity * specular);
 		}
 	}
 
