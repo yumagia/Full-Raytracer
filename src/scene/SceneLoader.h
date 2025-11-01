@@ -13,7 +13,6 @@ public:
 
 private:
 	std::vector<std::string> ParseArgsFromLine(std::string line);
-	void RemoveLeading(std::string &s);
 };
 
 #endif

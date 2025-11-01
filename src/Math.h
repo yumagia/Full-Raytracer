@@ -3,9 +3,18 @@
 
 #include <math.h>
 
+struct Vec3i {
+	Vec3i() {}
+	Vec3i(int x, int y, int z) : x(x), y(y), z(z) {}
+	Vec3i(const Vec3i &v2) : x(v2.x), y(v2.y), z(v2.z) {}
+
+	int x = 0;
+	int y = 0;
+	int z = 0;
+};
+
 // Default is origin
-class Vec3f {
-public:
+struct Vec3f {
 	Vec3f() {}
 	Vec3f(float x, float y, float z) : x(x), y(y), z(z) {}
 	Vec3f(const Vec3f &v2) : x(v2.x), y(v2.y), z(v2.z) {}
@@ -37,8 +46,7 @@ public:
 
 // Floating-point quaternion in (w, x, y, z) convention
 // Default is identity
-class Quaternion {
-public:
+struct Quaternion {
 	Quaternion() {}		// Will be the indentity quaternion
     Quaternion(float w, float x, float y, float z) : w(w), x(x), y(y), z(z) {}
 	Quaternion(const Quaternion &q2) : w(q2.w), x(q2.x), y(q2.y), z(q2.z) {}
@@ -59,8 +67,7 @@ public:
 
 // R, G, and B float values between 0-1
 // Default is black
-class Color {
-public:
+struct Color {
     Color() {}
     Color(float r, float g, float b) : r(r), g(g), b(b) {}
 	Color(const Color &c2) : r(c2.r), g(c2.g), b(c2.b) {}

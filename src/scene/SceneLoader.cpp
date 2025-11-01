@@ -5,13 +5,6 @@
 #include <vector>
 #include <sstream>
 
-void SceneLoader::RemoveLeading(std::string &s) {
-	size_t newStart = s.find_first_not_of(" ");
-	if (std::string::npos != newStart) {
-		s.erase(0 , newStart);
-	}
-}
-
 std::vector<std::string> SceneLoader::ParseArgsFromLine(std::string line) {
 	std::vector<std::string> args;
 	args.reserve(MAX_ARGS);
@@ -41,6 +34,9 @@ Scene *SceneLoader::ParseSceneFile(const char *fileName) {
 
 	// Create the new scene
 	Scene *raytracerScene = new Scene();
+
+	raytracerScene->vertexCount = 0;
+	raytracerScene->normalCount = 0;
 
 	// Fill the default fields
 	raytracerScene->outputImage = "raytraced.bmp"; // memory leak
@@ -79,7 +75,7 @@ Scene *SceneLoader::ParseSceneFile(const char *fileName) {
 
 		args = ParseArgsFromLine(line);
 
-		if(!(args.empty() || args[0] == "#")) {    // Otherwise, skip it. It's a comment
+		if(!(args.empty() || args[0][0] == '#')) {    // Otherwise, skip it. It's a comment
 			if(args[0] == "camera_pos:") {
 				sceneCamera.eye = Vec3f(stof(args[1]), stof(args[2]), stof(args[3]));
 			}
@@ -98,6 +94,44 @@ Scene *SceneLoader::ParseSceneFile(const char *fileName) {
 			}
 			else if(args[0] == "output_image:") {
 				raytracerScene->outputImage = args[1].c_str();
+			}
+			else if(args[0] == "max_vertices:") {
+				raytracerScene->maxVertices = stoi(args[1]);
+				raytracerScene->vertexPool = new Vertex[raytracerScene->maxVertices];
+			}
+			else if(args[0] == "max_normals:") {
+				raytracerScene->maxNormals = stoi(args[1]);
+				raytracerScene->normalPool = new Normal[raytracerScene->maxNormals];
+			}
+			else if(args[0] == "vertex:") {
+				Vertex vertex = Vertex(stof(args[1]), stof(args[2]), stof(args[3]));
+				raytracerScene->vertexPool[raytracerScene->vertexCount++] = vertex;
+			}
+			else if(args[0] == "normal:") {
+				Normal normal = Normal(stof(args[1]), stof(args[2]), stof(args[3]));
+				raytracerScene->normalPool[raytracerScene->normalCount++] = normal;
+			}
+			else if(args[0] == "triangle:") {
+				Triangle triangle;
+				triangle.v1 = &raytracerScene->vertexPool[stoi(args[1])];
+				triangle.v2 = &raytracerScene->vertexPool[stoi(args[2])];
+				triangle.v2 = &raytracerScene->vertexPool[stoi(args[3])];
+
+				raytracerScene->triangles.push_back(triangle);
+			}
+			else if(args[0] == "normal_triangle:") {
+				NormalTriangle normalTriangle;
+
+				normalTriangle.v1 = &raytracerScene->vertexPool[stoi(args[1])];
+				normalTriangle.v2 = &raytracerScene->vertexPool[stoi(args[2])];
+				normalTriangle.v2 = &raytracerScene->vertexPool[stoi(args[3])];
+
+				normalTriangle.n1 = &raytracerScene->normalPool[stoi(args[4])];
+				normalTriangle.n2 = &raytracerScene->normalPool[stoi(args[5])];
+				normalTriangle.n3 = &raytracerScene->normalPool[stoi(args[6])];
+
+				raytracerScene->normalTriangles.push_back(normalTriangle);
+
 			}
 			else if(args[0] == "sphere:") {
 				Sphere sphere;

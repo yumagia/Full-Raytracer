@@ -40,6 +40,23 @@ struct SpotLight {
     float angle1, angle2;
 };
 
+// A Vec3f representing a vertex
+typedef Vec3f Vertex;
+
+// A Vec3f representing a normal
+typedef Vec3f Normal;
+
+struct Triangle {
+    Vertex *v1, *v2, *v3;
+    Material material;
+};
+
+struct NormalTriangle {
+    Vertex *v1, *v2, *v3;
+    Normal *n1, *n2, *n3;
+};
+
+// A color representing scene ambient
 typedef Color AmbientLight;
 
 #endif

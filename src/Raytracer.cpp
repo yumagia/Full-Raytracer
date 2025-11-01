@@ -8,6 +8,7 @@
 
 #define SAMPLE_COUNT 9
 
+// Fall-off constants 
 #define KC 2
 #define KL 1
 #define KQ 0.2
@@ -145,12 +146,15 @@ Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool hit
 }
 
 Color RayTraceScene(Vec3f start, Vec3f dir, Scene *scene, bool hitFlag, int depth) {
+	std::vector<Triangle> triangleList = scene->triangles;
 	std::vector<Sphere> sphereList = scene->spheres;
 
 	float tMax = MAX_T;
 	bool hit = false;
 	Vec3f v, n, p;			// For shading
 	Material material;	// Material, also for shading
+
+	for(Triangle triangle : triangleList) {}
 
 	for(Sphere sphere : sphereList) {
 		float tHit;
