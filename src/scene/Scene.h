@@ -2,6 +2,7 @@
 #define SCENE_INCLUDED
 
 #include "ScenePrimitives.h"
+#include "Bvh.h"
 
 #include <vector>
 #include <string>
@@ -43,6 +44,10 @@ public:
 
 	int vertexCount = 0;
 	int normalCount = 0;
+
+	// Lets go
+	SceneBvh *bvh;
+	bool accelerate;
 };
 
 #endif

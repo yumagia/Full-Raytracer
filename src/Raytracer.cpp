@@ -3,6 +3,8 @@
 #include "Math.h"
 #include "scene/SceneLoader.h"
 
+#include <omp.h>		// Parallel processing
+
 #include <iostream>
 #include <algorithm>
 
@@ -172,13 +174,13 @@ Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool noR
 		}
 
 		Vec3f rayReflected = (-2 * v.Dot(n) * n) + v;
-		Color reflection = fresnelFactor * RayTraceScene(p, rayReflected, scene, hitFlag, depth + 1);
+		Color reflection = fresnelFactor * RayTraceScene(p, rayReflected, scene, hitFlag && !noRefract, depth + 1);
 		shade = shade + reflection;
 
 		if((!(fresnelFactor == 1.f))) {	// Make sure the ray is not being hyper-reflected
 			Vec3f rayRefracted;
 			
-			if(noRefract) {		// Triangle
+			if(noRefract) {			// Triangle
 				rayRefracted = v;
 			}
 			else {
@@ -187,7 +189,7 @@ Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool noR
 				refractedParallel.Negate();
 				rayRefracted = refractedPerp + refractedParallel;
 			}
-			Color refraction = (1 - fresnelFactor) * RayTraceScene(p, rayRefracted, scene, hitFlag^1, depth + 1);
+			Color refraction = (1 - fresnelFactor) * RayTraceScene(p, rayRefracted, scene, hitFlag^1 && !noRefract, depth + 1);
 
 			shade = shade + (material.transmissive * refraction);
 		}
@@ -208,23 +210,49 @@ Color RayTraceScene(Vec3f start, Vec3f dir, Scene *scene, bool hitFlag, int dept
 	Material material;	// Material, also for shading
 	float tHit;
 
-	for(Triangle triangle : triangleList) {
-		if(HitCheckTriangle(start, dir, triangle, tMax, tHit)) {
-			if(!(tHit < RAY_EPS)) {
-				v = tHit * dir;				// Vector from eye to hit point
-				p = start + v;				// Hit point
-				n = triangle.plane.normal;	// Triangle normal
-				if((n.Dot(start) - triangle.plane.dist) < 0) {			// Flip if facing away from ray
-					n.Negate();
-				}
-				material = triangle.material;
+	if(scene->accelerate) {
+		Triangle hitTriangle;
+		if(scene->bvh->RayBvh(start, dir, 0, tMax, tHit, hitTriangle)) {
+			if(HitCheckTriangle(start, dir, hitTriangle, tMax, tHit)) {		// Kind of a debug to verify the triangle hit
+				if(!(tHit < RAY_EPS)) {
+					v = tHit * dir;				// Vector from eye to hit point
+					p = start + v;				// Hit point
+					n = hitTriangle.plane.normal;	// Triangle normal
+					if((n.Dot(start) - hitTriangle.plane.dist) < 0) {			// Flip if facing away from ray
+						n.Negate();
+					}
+					material = hitTriangle.material;
 
-				tMax = tHit;
-				hit = true;
-				noRefract = true;
+					tMax = tHit;
+					hit = true;
+					noRefract = true;
+				}
+			}
+			else {
+				std::cout << "Debug warning: Spurious Bvh hit. Not supposed to happen." << std::endl;
 			}
 		}
 	}
+	else {
+		for(Triangle triangle : triangleList) {
+			if(HitCheckTriangle(start, dir, triangle, tMax, tHit)) {
+				if(!(tHit < RAY_EPS)) {
+					v = tHit * dir;				// Vector from eye to hit point
+					p = start + v;				// Hit point
+					n = triangle.plane.normal;	// Triangle normal
+					if((n.Dot(start) - triangle.plane.dist) < 0) {			// Flip if facing away from ray
+						n.Negate();
+					}
+					material = triangle.material;
+
+					tMax = tHit;
+					hit = true;
+					noRefract = true;
+				}
+			}
+		}
+	}
+
 
 	for(Sphere sphere : sphereList) {
 		if(HitCheckSphere(start, dir, tMax, sphere.origin, sphere.r, tHit)) {
@@ -252,9 +280,15 @@ Color RayTraceScene(Vec3f start, Vec3f dir, Scene *scene, bool hitFlag, int dept
 	return Shade(v, n, p, material, scene, noRefract, hitFlag, depth);	// Costly, so it's good to do once per ray
 }
 
-void RayTracePixel(int i, int j, Camera camera, float imgW, float imgH, float halfW, float halfH, float d, Scene *raytracerScene, Image *outputImage) {
+// Returns time taken for the process
+// Accelerated with OpenMP
+double RayTracePixel(int i, int j, Camera camera, float imgW, float imgH, float halfW, float halfH, float d, Scene *raytracerScene, Image *outputImage) {
 	Color color = Color(0, 0, 0);
-	for(int samples = 0; samples < SAMPLE_COUNT; samples++) {		// Do a few samples to beat aliasing
+	int samples;
+	double start = omp_get_wtime();
+	omp_set_num_threads(3);
+	#pragma omp parallel for
+	for(samples = 0; samples < SAMPLE_COUNT; samples++) {		// Do a few samples to beat aliasing
 		float u = (halfW - imgW * ((i + (rand()/(float) RAND_MAX)) / imgW));
 		float v = (halfH - imgH * ((j + (rand()/(float) RAND_MAX)) / imgH));
 		Vec3f p = camera.eye - d * camera.fwd + u * camera.right + v * camera.up;
@@ -263,14 +297,18 @@ void RayTracePixel(int i, int j, Camera camera, float imgW, float imgH, float ha
 
 		color = color + RayTraceScene(camera.eye, rayDir, raytracerScene, false, 1);
 	}
-
+	double end = omp_get_wtime();
+	
 	color = color / SAMPLE_COUNT;
 
 	(*outputImage).SetPixel(i, j, color);
+
+	double time = end - start;
+	return time;
 }
 
 int main(int argc, char** argv) {
-	if(argc != 2) {
+	if(argc < 2) {
 		std::cerr << "Usage: ./a.out scenefile" << std::endl;
 		return 0;
 	}
@@ -278,6 +316,14 @@ int main(int argc, char** argv) {
 	const char *fileName = argv[1];
 	SceneLoader loader;
 	Scene *raytracerScene = loader.ParseSceneFile(fileName);
+
+	std::cout << "--- RAYTRACING SCENE ---" << std::endl;
+
+	std::string optimize = argv[2];
+	if(optimize == "-accelerate") {
+		std::cout << "Using triangle BVH" << std::endl;
+		raytracerScene->accelerate = true;
+	}
 
 	Camera camera = raytracerScene->camera;
 
@@ -287,15 +333,19 @@ int main(int argc, char** argv) {
 	float halfH = imgH/2;
 	float d = halfH / tanf(camera.halfAngleFov * (M_PI / 180.0f));
 
-	std::cout << "Raytracing Scene..." << std::endl;
+	double start = omp_get_wtime();
+	double totalTime = 0;
 	Image outputImage = Image(raytracerScene->imageWidth, raytracerScene->imageHeight);
-	//#pragma omp parallel for 
 	for(int j = 0; j < raytracerScene->imageHeight; j++) {
 		for(int i = 0; i < raytracerScene->imageWidth; i++) {
-			RayTracePixel(i, j, camera, imgH, imgW, halfW, halfH, d, raytracerScene, &outputImage);
+			totalTime += RayTracePixel(i, j, camera, imgH, imgW, halfW, halfH, d, raytracerScene, &outputImage);
 		}
 	}
+	double end = omp_get_wtime();
+	
 	std::cout << "Done!" << std::endl;
+	std::cout << "Raytracing took: " << totalTime << " seconds" << std::endl;
+	std::cout << "Raytracing took: " << end - start << " seconds" << std::endl;
 
 	outputImage.Write(raytracerScene->outputImage.c_str());
 
