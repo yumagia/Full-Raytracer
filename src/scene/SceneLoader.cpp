@@ -35,9 +35,6 @@ Scene *SceneLoader::ParseSceneFile(const char *fileName) {
 	// Create the new scene
 	Scene *raytracerScene = new Scene();
 
-	raytracerScene->vertexCount = 0;
-	raytracerScene->normalCount = 0;
-
 	// Fill the default fields
 	raytracerScene->outputImage = "raytraced.bmp"; // memory leak
 	raytracerScene->imageWidth = 640;
@@ -98,37 +95,49 @@ Scene *SceneLoader::ParseSceneFile(const char *fileName) {
 			else if(args[0] == "max_vertices:") {
 				raytracerScene->maxVertices = stoi(args[1]);
 				raytracerScene->vertexPool = new Vertex[raytracerScene->maxVertices];
+				raytracerScene->vertexCount = 0;
 			}
 			else if(args[0] == "max_normals:") {
 				raytracerScene->maxNormals = stoi(args[1]);
 				raytracerScene->normalPool = new Normal[raytracerScene->maxNormals];
+				raytracerScene->normalCount = 0;
 			}
 			else if(args[0] == "vertex:") {
 				Vertex vertex = Vertex(stof(args[1]), stof(args[2]), stof(args[3]));
-				raytracerScene->vertexPool[raytracerScene->vertexCount++] = vertex;
+				raytracerScene->vertexPool[raytracerScene->vertexCount] = vertex;
+				raytracerScene->vertexCount++;
 			}
 			else if(args[0] == "normal:") {
 				Normal normal = Normal(stof(args[1]), stof(args[2]), stof(args[3]));
-				raytracerScene->normalPool[raytracerScene->normalCount++] = normal;
+				raytracerScene->normalPool[raytracerScene->normalCount] = normal;
+				raytracerScene->normalCount++;
 			}
 			else if(args[0] == "triangle:") {
 				Triangle triangle;
-				triangle.v1 = &raytracerScene->vertexPool[stoi(args[1])];
-				triangle.v2 = &raytracerScene->vertexPool[stoi(args[2])];
-				triangle.v2 = &raytracerScene->vertexPool[stoi(args[3])];
+				triangle.v1 = raytracerScene->vertexPool[stoi(args[1])];
+				triangle.v2 = raytracerScene->vertexPool[stoi(args[2])];
+				triangle.v3 = raytracerScene->vertexPool[stoi(args[3])];
+				triangle.material = currentMaterial;
+
+				// Pre-process the plane
+				triangle.CreatePlane();
 
 				raytracerScene->triangles.push_back(triangle);
 			}
 			else if(args[0] == "normal_triangle:") {
 				NormalTriangle normalTriangle;
 
-				normalTriangle.v1 = &raytracerScene->vertexPool[stoi(args[1])];
-				normalTriangle.v2 = &raytracerScene->vertexPool[stoi(args[2])];
-				normalTriangle.v2 = &raytracerScene->vertexPool[stoi(args[3])];
+				normalTriangle.v1 = raytracerScene->vertexPool[stoi(args[1])];
+				normalTriangle.v2 = raytracerScene->vertexPool[stoi(args[2])];
+				normalTriangle.v3 = raytracerScene->vertexPool[stoi(args[3])];
 
-				normalTriangle.n1 = &raytracerScene->normalPool[stoi(args[4])];
-				normalTriangle.n2 = &raytracerScene->normalPool[stoi(args[5])];
-				normalTriangle.n3 = &raytracerScene->normalPool[stoi(args[6])];
+				normalTriangle.n1 = raytracerScene->normalPool[stoi(args[4])];
+				normalTriangle.n2 = raytracerScene->normalPool[stoi(args[5])];
+				normalTriangle.n3 = raytracerScene->normalPool[stoi(args[6])];
+				normalTriangle.material = currentMaterial;
+
+				// Pre-process the plane
+				normalTriangle.CreatePlane();
 
 				raytracerScene->normalTriangles.push_back(normalTriangle);
 

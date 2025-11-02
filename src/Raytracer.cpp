@@ -10,12 +10,57 @@
 
 // Fall-off constants 
 #define KC 2
-#define KL 1
-#define KQ 0.2
+#define KL 2
+#define KQ 0.3
 
-#define MAX_T 1000
+#define MAX_T 5000
 #define RAY_EPS 0.0001		// Prevents acne
+#define PLANE_EQUALS_EPS 0.00001		// For parallel rays
 
+// Return d for convenient checks
+Vec3f RayPlaneIntersection(Vec3f start, Vec3f dir, Plane plane, float &d) {
+	d = (plane.normal.Dot(start) - plane.dist) / plane.normal.Dot(dir);
+	return start + d * dir;
+}
+
+// Boolean hit check against triangle,
+// Passes a Vec3f intersection point
+bool HitCheckTriangle(Vec3f start, Vec3f dir, Triangle triangle, float tMax, float &tHit) {
+
+	// Möller-Trumbore test
+	Vec3f e1 = triangle.v2 - triangle.v1;
+	Vec3f e2 = triangle.v3 - triangle.v1;
+	Vec3f cross = dir.Cross(e2);
+	float det = e1.Dot(cross);
+
+	if(fabs(det) < PLANE_EQUALS_EPS) {		// Parallel
+		return false;
+	}
+
+	float detInverse = 1.f / det;
+
+	// Find u
+	Vec3f s = start - triangle.v1;
+	float u = detInverse * s.Dot(cross);
+	if(u < 0 || u > 1) {
+		return false;
+	}
+
+	// Find v
+	Vec3f cross2 = s.Cross(e1);
+	float v = detInverse * dir.Dot(cross2);
+	if(v < 0 || u + v > 1) {
+		return false;
+	}
+
+	tHit = detInverse * e2.Dot(cross2);
+	
+	if(tHit > tMax) {	// We went too far
+		return false;
+	}
+
+	return true;
+}
 
 // Returns a boolean hit check,
 // Passes the t value where a strike occurs
@@ -78,7 +123,7 @@ float GetFresnelFactor(float refractionCoeff1, float refractionCoeff2, Vec3f v, 
 	return fresnelFactor;
 }
 
-Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool hitFlag, int depth) {
+Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool noRefract, bool hitFlag, int depth) {
 	std::vector<DirectionalLight> directionalLights = scene->directionalLights;
 	std::vector<PointLight> pointLights = scene->pointLights;
 	std::vector<SpotLight> spotLights = scene->spotLights;
@@ -95,7 +140,7 @@ Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool hit
 			Vec3f rayReflected = ((2 * lightDir.Dot(n)) * n) - lightDir;
 			float specular = std::clamp(rayReflected.Dot(v), 0.f, 1.f);
 
-			shade = shade + directionalLight.intensity * material.diffuse * diffuse + directionalLight.intensity * material.specular * specular;
+			shade = shade + (directionalLight.intensity * material.diffuse * diffuse + directionalLight.intensity * material.specular * specular); 
 		}
 	}
 
@@ -119,7 +164,7 @@ Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool hit
 	if(!(depth > scene->maxDepth)) {
 		float fresnelFactor;
 
-		if(hitFlag) {	// In a dielectric
+		if(hitFlag && !noRefract) {	// In a dielectric
 			fresnelFactor = GetFresnelFactor(material.refractionCoeff, 1, v, n);
 		} 
 		else {			// In air
@@ -130,11 +175,18 @@ Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool hit
 		Color reflection = fresnelFactor * RayTraceScene(p, rayReflected, scene, hitFlag, depth + 1);
 		shade = shade + reflection;
 
-		if(!(fresnelFactor == 1.f)) {	// Make sure the ray is not being hyper-reflected
-			Vec3f refractedPerp = (material.refractionCoeff) * (v + -v.Dot(n) * n);
-			Vec3f refractedParallel = sqrtf(fabs(1.0 - refractedPerp.Dot(refractedPerp))) * n;
-			refractedParallel.Negate();
-			Vec3f rayRefracted = refractedPerp + refractedParallel;
+		if((!(fresnelFactor == 1.f))) {	// Make sure the ray is not being hyper-reflected
+			Vec3f rayRefracted;
+			
+			if(noRefract) {		// Triangle
+				rayRefracted = v;
+			}
+			else {
+				Vec3f refractedPerp = (material.refractionCoeff) * (v + -v.Dot(n) * n);
+				Vec3f refractedParallel = sqrtf(fabs(1.0 - refractedPerp.Dot(refractedPerp))) * n;
+				refractedParallel.Negate();
+				rayRefracted = refractedPerp + refractedParallel;
+			}
 			Color refraction = (1 - fresnelFactor) * RayTraceScene(p, rayRefracted, scene, hitFlag^1, depth + 1);
 
 			shade = shade + (material.transmissive * refraction);
@@ -149,16 +201,33 @@ Color RayTraceScene(Vec3f start, Vec3f dir, Scene *scene, bool hitFlag, int dept
 	std::vector<Triangle> triangleList = scene->triangles;
 	std::vector<Sphere> sphereList = scene->spheres;
 
+	bool noRefract;
 	float tMax = MAX_T;
 	bool hit = false;
 	Vec3f v, n, p;			// For shading
 	Material material;	// Material, also for shading
+	float tHit;
 
-	for(Triangle triangle : triangleList) {}
+	for(Triangle triangle : triangleList) {
+		if(HitCheckTriangle(start, dir, triangle, tMax, tHit)) {
+			if(!(tHit < RAY_EPS)) {
+				v = tHit * dir;				// Vector from eye to hit point
+				p = start + v;				// Hit point
+				n = triangle.plane.normal;	// Triangle normal
+				if((n.Dot(start) - triangle.plane.dist) < 0) {			// Flip if facing away from ray
+					n.Negate();
+				}
+				material = triangle.material;
+
+				tMax = tHit;
+				hit = true;
+				noRefract = true;
+			}
+		}
+	}
 
 	for(Sphere sphere : sphereList) {
-		float tHit;
-		if(HitCheckSphere(start, dir, tMax, sphere.origin, sphere.r, tHit)) {			
+		if(HitCheckSphere(start, dir, tMax, sphere.origin, sphere.r, tHit)) {
 			if(!(tHit < RAY_EPS)) {
 				v = tHit * dir;				// Vector from eye to hit point
 				p = start + v;				// Point on sphere
@@ -167,6 +236,7 @@ Color RayTraceScene(Vec3f start, Vec3f dir, Scene *scene, bool hitFlag, int dept
 
 				tMax = tHit;	// Truncate the ray. This helps with performance
 				hit = true;
+				noRefract = false;
 			}
 		}
 	}
@@ -179,7 +249,24 @@ Color RayTraceScene(Vec3f start, Vec3f dir, Scene *scene, bool hitFlag, int dept
 	
 	n.Normalize();
 	v.Normalize();
-	return Shade(v, n, p, material, scene, hitFlag, depth);	// Costly, so it's good to do once per ray
+	return Shade(v, n, p, material, scene, noRefract, hitFlag, depth);	// Costly, so it's good to do once per ray
+}
+
+void RayTracePixel(int i, int j, Camera camera, float imgW, float imgH, float halfW, float halfH, float d, Scene *raytracerScene, Image *outputImage) {
+	Color color = Color(0, 0, 0);
+	for(int samples = 0; samples < SAMPLE_COUNT; samples++) {		// Do a few samples to beat aliasing
+		float u = (halfW - imgW * ((i + (rand()/(float) RAND_MAX)) / imgW));
+		float v = (halfH - imgH * ((j + (rand()/(float) RAND_MAX)) / imgH));
+		Vec3f p = camera.eye - d * camera.fwd + u * camera.right + v * camera.up;
+		Vec3f rayDir = (p - camera.eye);
+		rayDir.Normalize();
+
+		color = color + RayTraceScene(camera.eye, rayDir, raytracerScene, false, 1);
+	}
+
+	color = color / SAMPLE_COUNT;
+
+	(*outputImage).SetPixel(i, j, color);
 }
 
 int main(int argc, char** argv) {
@@ -200,26 +287,15 @@ int main(int argc, char** argv) {
 	float halfH = imgH/2;
 	float d = halfH / tanf(camera.halfAngleFov * (M_PI / 180.0f));
 
+	std::cout << "Raytracing Scene..." << std::endl;
 	Image outputImage = Image(raytracerScene->imageWidth, raytracerScene->imageHeight);
+	//#pragma omp parallel for 
 	for(int j = 0; j < raytracerScene->imageHeight; j++) {
 		for(int i = 0; i < raytracerScene->imageWidth; i++) {
-
-			Color color = Color(0, 0, 0);
-			for(int samples = 0; samples < SAMPLE_COUNT; samples++) {		// Do a few samples to beat aliasing
-				float u = (halfW - imgW * ((i + (rand()/(float) RAND_MAX)) / imgW));
-				float v = (halfH - imgH * ((j + (rand()/(float) RAND_MAX)) / imgH));
-				Vec3f p = camera.eye - d * camera.fwd + u * camera.right + v * camera.up;
-				Vec3f rayDir = (p - camera.eye);
-				rayDir.Normalize();
-
-				color = color + RayTraceScene(camera.eye, rayDir, raytracerScene, false, 1);
-			}
-
-			color = color / SAMPLE_COUNT;
-
-			outputImage.SetPixel(i, j, color);
+			RayTracePixel(i, j, camera, imgH, imgW, halfW, halfH, d, raytracerScene, &outputImage);
 		}
 	}
+	std::cout << "Done!" << std::endl;
 
 	outputImage.Write(raytracerScene->outputImage.c_str());
 
