@@ -6,21 +6,39 @@
 #define GIANT_NUM 1e20f
 
 SceneBvh::SceneBvh(std::vector<Triangle> inputTriangles) {
-	triangles = inputTriangles;
-	bvhNodes = new BvhNode[triangles.size() * 2]; // Allocate an array of bvhNodes to store the tree
+	numTris = inputTriangles.size();
+	if(numTris == 0) {
+		return;
+	}
+	triangles = new Triangle[numTris];
+	int i = 0;
+
+	for(Triangle triangle : inputTriangles) {
+		triangles[i] = triangle;
+		i++;
+	}
+
+	bvhNodes = new BvhNode[numTris * 2]; // Allocate an array of bvhNodes to store the tree
 }
 
 SceneBvh::~SceneBvh() {
 	delete[] bvhNodes;
+	delete[] triangles;
 }
 
-void SceneBvh::BuildBvh() {
+bool SceneBvh::BuildBvh() {
+
+	if(numTris == 0) {
+		return false;
+	}
 	BvhNode &root = bvhNodes[rootIdx];
 	root.left = 0;		// Error. why?
-	root.firstTriangle = 0, root.triangleCount = triangles.size();
+	root.firstTriangle = 0, root.triangleCount = numTris;
 
 	CalcBounds(rootIdx);
 	Subdivide(rootIdx);
+
+	return true;
 }
 
 void BoundBoxf::AddPoint(Vec3f p) {
@@ -60,7 +78,7 @@ void SceneBvh::CalcBounds(uint nodeIdx) {
 void SceneBvh::Subdivide(uint nodeIdx) {
 	BvhNode &node = bvhNodes[nodeIdx];
 
-	if(node.triangleCount <= 4) {		// Stop when there are four faces
+	if(node.triangleCount <= 5) {		// Stop when there are at least two faces (you often can't split further)
 		return;
 	}
 

@@ -47,7 +47,7 @@ public:
 
 	// Lets go
 	SceneBvh *bvh;
-	bool accelerate;
+	bool accelerate = false;
 };
 
 #endif

@@ -27,16 +27,17 @@ public:
 
 	SceneBvh(std::vector<Triangle> inputTriangles);
 
-	void BuildBvh();
+	bool BuildBvh();
 	void CalcBounds(uint nodeIdx);
 	void Subdivide(uint nodeIdx);
 
 	bool RayBvh(Vec3f start, Vec3f dir, const uint nodeIdx, float tMax, float &tHit, Triangle &triHit);
 
-	std::vector<Triangle> triangles;
+	int		numTris;
+	Triangle	*triangles = NULL;
 	uint rootIdx = 0;
 	uint nodesUsed = 1;
-	BvhNode *bvhNodes;
+	BvhNode *bvhNodes = NULL;
 };
 
 #endif
