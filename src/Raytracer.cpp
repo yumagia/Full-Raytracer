@@ -17,11 +17,12 @@
 
 #define MAX_T 5000
 #define RAY_EPS 0.0001		// Prevents acne
-#define PLANE_EQUALS_EPS 1e-10		// For parallel rays
+#define PLANE_EQUALS_EPS 1e-4		// For parallel rays
 
 // Return d for convenient checks
 Vec3f RayPlaneIntersection(Vec3f start, Vec3f dir, Plane plane, float &d) {
-	d = (plane.normal.Dot(start) - plane.dist) / plane.normal.Dot(dir);
+	d = -(plane.normal.Dot(start) + plane.dist) / plane.normal.Dot(dir);
+
 	return start + d * dir;
 }
 
@@ -57,6 +58,8 @@ bool HitCheckTriangle(Vec3f start, Vec3f dir, Triangle triangle, float tMax, flo
 
 	tHit = detInverse * e2.Dot(cross2);
 	
+	//RayPlaneIntersection(start, dir, triangle.plane, tHit);
+
 	if(tHit > tMax) {	// We went too far
 		return false;
 	}
@@ -286,6 +289,8 @@ Color RayTraceScene(Vec3f start, Vec3f dir, Scene *scene, int depth) {
 
 	if(!hit) {
 		return scene->background;
+	} else {
+		//std::cout << "hit" << std::endl;
 	}
 	
 	// Since we got the closest hit data, we can now shade
@@ -354,7 +359,7 @@ int main(int argc, char** argv) {
 	double start = omp_get_wtime();
 	double totalTime = 0;
 	Image outputImage = Image(raytracerScene->imageWidth, raytracerScene->imageHeight);
-	#pragma omp parallel for schedule(static, 1) num_threads(9)
+	#pragma omp parallel for
 	for(int j = 0; j < raytracerScene->imageHeight; j++) {
 		for(int i = 0; i < raytracerScene->imageWidth; i++) {
 			totalTime += RayTracePixel(i, j, camera, imgH, imgW, halfW, halfH, d, raytracerScene, &outputImage);

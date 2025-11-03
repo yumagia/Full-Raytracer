@@ -61,8 +61,10 @@ struct Triangle {
 		plane.normal.Normalize();
 		area = (plane.normal.Normalize()) / 2;
 	}
+	bool useNormals = false;
 	
 	Vertex v1, v2, v3;
+	Normal n1, n2, n3;
 	Plane plane;
 	float area;
 	Material material;

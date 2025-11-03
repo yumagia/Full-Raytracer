@@ -2,6 +2,7 @@
 #include "Raytracer.h"
 
 #include <vector>
+#include <iostream>
 
 #define GIANT_NUM 1e20f
 

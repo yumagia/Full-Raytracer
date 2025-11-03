@@ -125,7 +125,7 @@ Scene *SceneLoader::ParseSceneFile(const char *fileName) {
 				raytracerScene->triangles.push_back(triangle);
 			}
 			else if(args[0] == "normal_triangle:") {
-				NormalTriangle normalTriangle;
+				Triangle normalTriangle;
 
 				normalTriangle.v1 = raytracerScene->vertexPool[stoi(args[1])];
 				normalTriangle.v2 = raytracerScene->vertexPool[stoi(args[2])];
@@ -139,7 +139,7 @@ Scene *SceneLoader::ParseSceneFile(const char *fileName) {
 				// Pre-process the plane
 				normalTriangle.CreatePlane();
 
-				raytracerScene->normalTriangles.push_back(normalTriangle);
+				raytracerScene->triangles.push_back(normalTriangle);
 
 			}
 			else if(args[0] == "sphere:") {
