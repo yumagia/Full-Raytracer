@@ -17,7 +17,7 @@
 
 #define MAX_T 5000
 #define RAY_EPS 0.0001		// Prevents acne
-#define PLANE_EQUALS_EPS 0.0000001		// For parallel rays
+#define PLANE_EQUALS_EPS 1e-10		// For parallel rays
 
 // Return d for convenient checks
 Vec3f RayPlaneIntersection(Vec3f start, Vec3f dir, Plane plane, float &d) {
@@ -94,7 +94,26 @@ bool HitCheckSphere(Vec3f start, Vec3f dir, float tMax, Vec3f spherePos, float r
 
 bool HitCheckScene(Vec3f start, Vec3f dir, float tMax, Scene *scene) {
 	std::vector<Sphere> sphereList = scene->spheres;
+	std::vector<Triangle> triangleList = scene->triangles;
 	float tHit;
+
+	if(scene->accelerate && (triangleList.size() != 0)) {
+		Triangle hitTriangle;
+		if(scene->bvh->RayBvh(start, dir, 0, tMax, tHit, hitTriangle)) {
+			if(!(tHit < RAY_EPS)) {
+				return true;
+			}
+		}
+	}
+	else {
+		for(Triangle triangle : triangleList) {
+			if(HitCheckTriangle(start, dir, triangle, tMax, tHit)) {
+				if(!(tHit < RAY_EPS)) {
+					return true;
+				}
+			}
+		}
+	}
 
 	for(Sphere sphere : sphereList) {
 		if(HitCheckSphere(start, dir, tMax, sphere.origin, sphere.r, tHit)) {
@@ -125,7 +144,7 @@ float GetFresnelFactor(float refractionCoeff1, float refractionCoeff2, Vec3f v, 
 	return fresnelFactor;
 }
 
-Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool noRefract, bool hitFlag, int depth) {
+Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool noRefract, int depth) {
 	std::vector<DirectionalLight> directionalLights = scene->directionalLights;
 	std::vector<PointLight> pointLights = scene->pointLights;
 	std::vector<SpotLight> spotLights = scene->spotLights;
@@ -136,8 +155,8 @@ Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool noR
 		lightDir.Normalize();
 		Vec3f toLight = lightDir;
 		toLight.Negate();
-
-		if(!HitCheckScene(p, toLight, MAX_T, scene)) {		// Cast another ray for shadowing
+			
+		if((!n.Dot(toLight) < 0) || !HitCheckScene(p, toLight, MAX_T, scene)) {		// Cast another ray for shadowing
 			float diffuse = std::clamp(n.Dot(toLight), 0.f, 1.f);
 		
 			Vec3f rayReflected = ((2 * lightDir.Dot(n)) * n) - lightDir;
@@ -153,7 +172,7 @@ Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool noR
 		Vec3f toLight = lightDir;
 		toLight.Negate();
 		
-		if(!HitCheckScene(p, toLight, dist, scene)) {		// Cast another ray for shadowing
+		if((!n.Dot(toLight) < 0) || !HitCheckScene(p, toLight, dist, scene)) {		// Cast another ray for shadowing
 			float diffuse = std::clamp(n.Dot(toLight), 0.f, 1.f);
 			
 			Vec3f rayReflected = ((2 * lightDir.Dot(n)) * n) - lightDir;
@@ -168,7 +187,7 @@ Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool noR
 	if(!(depth > scene->maxDepth)) {
 		float fresnelFactor;
 
-		if(hitFlag && !noRefract) {	// In a dielectric
+		if(n.Dot(v) > 0) {	// In a dielectric
 			fresnelFactor = GetFresnelFactor(material.refractionCoeff, 1, v, n);
 		} 
 		else {			// In air
@@ -176,21 +195,19 @@ Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool noR
 		}
 
 		Vec3f rayReflected = (-2 * v.Dot(n) * n) + v;
-		Color reflection = fresnelFactor * RayTraceScene(p, rayReflected, scene, hitFlag && !noRefract, depth + 1);
+		Color reflection = fresnelFactor * RayTraceScene(p, rayReflected, scene, depth + 1);
 		shade = shade + reflection;
 
-		if((!(fresnelFactor == 1.f))) {	// Make sure the ray is not being hyper-reflected
-			Vec3f rayRefracted;
-			
+		if((!(fresnelFactor == 1.f))) {	// Make sure the ray is not being hyper-reflected	
 			if(noRefract) {			// Triangle
-				rayRefracted = v;
 			}
 			else {
+				Vec3f rayRefracted;
 				Vec3f refractedPerp = (material.refractionCoeff) * (v + -v.Dot(n) * n);
 				Vec3f refractedParallel = sqrtf(fabs(1.0 - refractedPerp.Dot(refractedPerp))) * n;
 				refractedParallel.Negate();
 				rayRefracted = refractedPerp + refractedParallel;
-				Color refraction = (1 - fresnelFactor) * RayTraceScene(p, rayRefracted, scene, hitFlag^1 && !noRefract, depth + 1);
+				Color refraction = (1 - fresnelFactor) * RayTraceScene(p, rayRefracted, scene, depth + 1);
 
 				shade = shade + (material.transmissive * refraction);
 			}
@@ -202,7 +219,7 @@ Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool noR
 	return shade;
 }
 
-Color RayTraceScene(Vec3f start, Vec3f dir, Scene *scene, bool hitFlag, int depth) {
+Color RayTraceScene(Vec3f start, Vec3f dir, Scene *scene, int depth) {
 	std::vector<Triangle> triangleList = scene->triangles;
 	std::vector<Sphere> sphereList = scene->spheres;
 
@@ -211,7 +228,7 @@ Color RayTraceScene(Vec3f start, Vec3f dir, Scene *scene, bool hitFlag, int dept
 	bool hit = false;
 	Vec3f v, n, p;			// For shading
 	Material material;	// Material, also for shading
-	float tHit;
+	float tHit = tMax;
 
 	if(scene->accelerate && (triangleList.size() != 0)) {
 		Triangle hitTriangle;
@@ -275,7 +292,7 @@ Color RayTraceScene(Vec3f start, Vec3f dir, Scene *scene, bool hitFlag, int dept
 	
 	n.Normalize();
 	v.Normalize();
-	return Shade(v, n, p, material, scene, noRefract, hitFlag, depth);	// Costly, so it's good to do once per ray
+	return Shade(v, n, p, material, scene, noRefract, depth);	// Costly, so it's good to do once per ray
 }
 
 // Returns time taken for the process
@@ -292,7 +309,7 @@ double RayTracePixel(int i, int j, Camera camera, int imgW, int imgH, double hal
 		Vec3f rayDir = (p - camera.eye);
 		rayDir.Normalize();
 
-		color = color + RayTraceScene(camera.eye, rayDir, raytracerScene, false, 1);
+		color = color + RayTraceScene(camera.eye, rayDir, raytracerScene, 1);
 	}
 	double end = omp_get_wtime();
 	
@@ -337,6 +354,7 @@ int main(int argc, char** argv) {
 	double start = omp_get_wtime();
 	double totalTime = 0;
 	Image outputImage = Image(raytracerScene->imageWidth, raytracerScene->imageHeight);
+	#pragma omp parallel for schedule(static, 1) num_threads(9)
 	for(int j = 0; j < raytracerScene->imageHeight; j++) {
 		for(int i = 0; i < raytracerScene->imageWidth; i++) {
 			totalTime += RayTracePixel(i, j, camera, imgH, imgW, halfW, halfH, d, raytracerScene, &outputImage);
