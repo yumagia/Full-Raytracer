@@ -208,10 +208,11 @@ Scene *SceneLoader::ParseSceneFile(const char *fileName) {
 	raytracerScene->camera = sceneCamera;
 
 	raytracerScene->bvh = new SceneBvh(raytracerScene->triangles);
-	(*raytracerScene->bvh).BuildBvh();
+	raytracerScene->hasBvh = (*raytracerScene->bvh).BuildBvh();
 
 	file.close();
 
+	std::cout << "Number of triangles: " << raytracerScene->triangles.size() << std::endl;
 	std::cout << "File Parsing Success" << std::endl;
 
 	return raytracerScene;

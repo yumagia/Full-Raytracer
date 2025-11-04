@@ -15,7 +15,7 @@ struct BoundBoxf {
 struct BvhNode {
 	BoundBoxf bounds;
 
-	uint left, right;
+	uint left;
 
 	uint firstTriangle, triangleCount;
 };

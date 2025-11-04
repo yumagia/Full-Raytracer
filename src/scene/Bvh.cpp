@@ -33,8 +33,9 @@ bool SceneBvh::BuildBvh() {
 		return false;
 	}
 	BvhNode &root = bvhNodes[rootIdx];
-	root.left = 0;		// Error. why?
-	root.firstTriangle = 0, root.triangleCount = numTris;
+	root.left = 0;
+	root.firstTriangle = 0;
+	root.triangleCount = numTris;
 
 	CalcBounds(rootIdx);
 	Subdivide(rootIdx);
@@ -56,7 +57,7 @@ void BoundBoxf::AddPoint(Vec3f p) {
 		max.x = p.x;
 	}
 	if(p.y > max.y) {
-		max.x = p.y;
+		max.y = p.y;
 	}
 	if(p.z > max.z) {
 		max.z = p.z;
@@ -65,11 +66,11 @@ void BoundBoxf::AddPoint(Vec3f p) {
 
 void SceneBvh::CalcBounds(uint nodeIdx) {
 	BvhNode &node = bvhNodes[nodeIdx];
-	node.bounds.min = Vec3f(-GIANT_NUM, -GIANT_NUM, -GIANT_NUM);
-	node.bounds.max = Vec3f(GIANT_NUM, GIANT_NUM, GIANT_NUM);
+	node.bounds.min = Vec3f(GIANT_NUM, GIANT_NUM, GIANT_NUM);
+	node.bounds.max = Vec3f(-GIANT_NUM, -GIANT_NUM, -GIANT_NUM);
 	uint first = node.firstTriangle;
 	for(int i = 0; i < node.triangleCount; i++) {
-		Triangle triangle = triangles[first + i];
+		Triangle &triangle = triangles[first + i];
 		node.bounds.AddPoint(triangle.v1);
 		node.bounds.AddPoint(triangle.v2);
 		node.bounds.AddPoint(triangle.v3);
@@ -79,7 +80,7 @@ void SceneBvh::CalcBounds(uint nodeIdx) {
 void SceneBvh::Subdivide(uint nodeIdx) {
 	BvhNode &node = bvhNodes[nodeIdx];
 
-	if(node.triangleCount <= 5) {		// Stop when there are at least two faces (you often can't split further)
+	if(node.triangleCount <= 2) {		// Stop when there are at least two faces (you often can't split further)
 		return;
 	}
 
@@ -103,7 +104,7 @@ void SceneBvh::Subdivide(uint nodeIdx) {
 	int i = node.firstTriangle;
 	int j = i + node.triangleCount - 1;
 
-	do {
+	while(i <= j) {
 		Triangle triangle = triangles[i];
 		float centroidAxis;
 		if(axis = 0) {
@@ -115,6 +116,7 @@ void SceneBvh::Subdivide(uint nodeIdx) {
 		else if(axis = 2) {
 			centroidAxis = (triangle.v1.z + triangle.v1.z + triangle.v1.z) / 3;
 		}
+
 		if(centroidAxis < splitPos) {
 			i++;
 		}
@@ -123,7 +125,7 @@ void SceneBvh::Subdivide(uint nodeIdx) {
 			triangles[j--] = triangle;
 		}
 		
-	} while(i <= j);
+	};
 	
 	int leftCount = i - node.firstTriangle;
 	if(leftCount == 0 || leftCount == node.triangleCount) {	// Rare empty box?
@@ -196,19 +198,19 @@ bool SceneBvh::RayBvh(Vec3f start, Vec3f dir, const uint nodeIdx, float tMax, fl
 		return false;
 	}
 	if(node.triangleCount > 0) {		// In a leaf		
-		tHit = tMax;
 		for(int i = 0; i < node.triangleCount; i++) {
 			if(HitCheckTriangle(start, dir, triangles[node.firstTriangle + i], tMax, tHit)) {
 				triHit = triangles[node.firstTriangle + i];
 				hit = true;
+				tMax = tHit;
 			}
 		}
-
-		return hit;
 	}
 	else {
-		hit = RayBvh(start, dir, node.left, tMax, tHit, triHit);
-		return hit || RayBvh(start, dir, node.left + 1, tMax, tHit, triHit);
+		hit |= RayBvh(start, dir, node.left, tMax, tHit, triHit);
+		hit |= RayBvh(start, dir, node.left + 1, tMax, tHit, triHit);
 	}
+
+	return hit;
 }
 

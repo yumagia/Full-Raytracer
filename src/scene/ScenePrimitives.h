@@ -58,8 +58,8 @@ struct Triangle {
 	// NOTE: Write a c++ file for this?
 	void CreatePlane() {
 		plane.normal = (v2 - v1).Cross(v3 - v1);
-		plane.normal.Normalize();
 		area = (plane.normal.Normalize()) / 2;
+		plane.dist = plane.normal.Dot(v1);
 	}
 	bool useNormals = false;
 	
@@ -76,6 +76,7 @@ struct NormalTriangle {
 		plane.normal = (v2 - v1).Cross(v3 - v1);
 		plane.normal.Normalize();
 		area = (plane.normal.Normalize()) / 2;
+		plane.dist = plane.normal.Dot(v1);
 	}
 
 	Vertex v1, v2, v3;
