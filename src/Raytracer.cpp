@@ -94,7 +94,7 @@ bool HitCheckSphere(Vec3f start, Vec3f dir, float tMax, Vec3f spherePos, float r
 }
 
 bool HitCheckScene(Vec3f start, Vec3f dir, float tMax, Scene *scene) {
-	float tHit;
+	float tHit = tMax;
 
 	if(scene->accelerate && scene->hasBvh) {
 		Triangle hitTriangle;

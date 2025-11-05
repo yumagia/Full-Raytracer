@@ -5,7 +5,7 @@ camera_fwd: -.1 0 -1
 camera_up: 0 1 0 
 camera_fov_ha: 35
 film_resolution: 660 512
-film_resolution: 280 240
+#film_resolution: 280 240
 output_image: plant.png
 max_vertices: 15740
 

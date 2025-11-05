@@ -117,13 +117,13 @@ void SceneBvh::Subdivide(uint nodeIdx) {
 		Triangle triangle = triangles[i];
 		float centroidAxis;
 		if(axis = 0) {
-			centroidAxis = (triangle.v1.x + triangle.v1.x + triangle.v1.x) / 3;
+			centroidAxis = (triangle.v1.x + triangle.v2.x + triangle.v3.x) * 0.333333f;
 		}
 		else if(axis = 1) {
-			centroidAxis = (triangle.v1.y + triangle.v1.y + triangle.v1.y) / 3;
+			centroidAxis = (triangle.v1.y + triangle.v2.y + triangle.v3.y) * 0.333333f;
 		}
 		else if(axis = 2) {
-			centroidAxis = (triangle.v1.z + triangle.v1.z + triangle.v1.z) / 3;
+			centroidAxis = (triangle.v1.z + triangle.v2.z + triangle.v3.z) * 0.333333f;
 		}
 
 		if(centroidAxis < splitPos) {
