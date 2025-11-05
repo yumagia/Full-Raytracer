@@ -261,8 +261,9 @@ Color RayTraceScene(Vec3f start, Vec3f dir, Scene *scene, int depth) {
 					p = start + v;				// Hit point
 
 					if(triangle.useNormals) {
-						n = (uCoord * triangle.n1) + (vCoord * triangle.n2) + ((1 - uCoord - vCoord) * triangle.n3);
+						n = ((1 - uCoord - vCoord) * triangle.n1) + (uCoord * triangle.n2) + (vCoord * triangle.n3);
 						n.Normalize();
+						//return Color(n.x, n.y, n.z);
 					}
 					else {
 						n = triangle.plane.normal;	// Triangle normal
