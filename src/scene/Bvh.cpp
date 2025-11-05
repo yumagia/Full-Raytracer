@@ -4,7 +4,12 @@
 #include <vector>
 #include <iostream>
 
-#define GIANT_NUM 1e20f
+#define MAX_T 5000
+#define RAY_EPS 0.0001		// Prevents acne
+#define PLANE_EQUALS_EPS 0.0000001		// For parallel rays
+
+#define GIANT_NUM 1e10f
+#define PADDING 1e-6f
 
 SceneBvh::SceneBvh(std::vector<Triangle> inputTriangles) {
 	numTris = inputTriangles.size();
@@ -75,12 +80,16 @@ void SceneBvh::CalcBounds(uint nodeIdx) {
 		node.bounds.AddPoint(triangle.v2);
 		node.bounds.AddPoint(triangle.v3);
 	}
+
+	// Inflate bounding box
+	node.bounds.min = node.bounds.min - Vec3f(PADDING, PADDING, PADDING);
+	node.bounds.max = node.bounds.max + Vec3f(PADDING, PADDING, PADDING);
 }
 
 void SceneBvh::Subdivide(uint nodeIdx) {
 	BvhNode &node = bvhNodes[nodeIdx];
 
-	if(node.triangleCount <= 2) {		// Stop when there are at least two faces (you often can't split further)
+	if(node.triangleCount <= 3) {		// Stop when there are at least two faces (you often can't split further)
 		return;
 	}
 
@@ -191,7 +200,7 @@ bool HitCheckBoundingBox(Vec3f start, Vec3f dir, BoundBoxf boundingBox) {
 }
 
 // Recursive hit routine on Bvh
-bool SceneBvh::RayBvh(Vec3f start, Vec3f dir, const uint nodeIdx, float tMax, float &tHit, Triangle &triHit) {
+bool SceneBvh::RayBvh(Vec3f start, Vec3f dir, const uint nodeIdx, float tMax, float &tHit, Triangle &triHit, float &u, float &v) {
 	bool hit = false;
 	BvhNode &node = bvhNodes[nodeIdx];
 	if(!HitCheckBoundingBox(start, dir, node.bounds)) {		// Missed
@@ -199,16 +208,18 @@ bool SceneBvh::RayBvh(Vec3f start, Vec3f dir, const uint nodeIdx, float tMax, fl
 	}
 	if(node.triangleCount > 0) {		// In a leaf		
 		for(int i = 0; i < node.triangleCount; i++) {
-			if(HitCheckTriangle(start, dir, triangles[node.firstTriangle + i], tMax, tHit)) {
-				triHit = triangles[node.firstTriangle + i];
-				hit = true;
-				tMax = tHit;
+			if(HitCheckTriangle(start, dir, triangles[node.firstTriangle + i], tMax, tHit, u, v)) {
+				if(!(tHit < RAY_EPS)) {
+					triHit = triangles[node.firstTriangle + i];
+					hit = true;
+					tMax = tHit;
+				}
 			}
 		}
 	}
 	else {
-		hit |= RayBvh(start, dir, node.left, tMax, tHit, triHit);
-		hit |= RayBvh(start, dir, node.left + 1, tMax, tHit, triHit);
+		hit |= RayBvh(start, dir, node.left, tMax, tHit, triHit, u, v);
+		hit |= RayBvh(start, dir, node.left + 1, tMax, tHit, triHit, u, v);
 	}
 
 	return hit;

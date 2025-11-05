@@ -31,7 +31,7 @@ public:
 	void CalcBounds(uint nodeIdx);
 	void Subdivide(uint nodeIdx);
 
-	bool RayBvh(Vec3f start, Vec3f dir, const uint nodeIdx, float tMax, float &tHit, Triangle &triHit);
+	bool RayBvh(Vec3f start, Vec3f dir, const uint nodeIdx, float tMax, float &tHit, Triangle &triHit, float &u, float &v);
 
 	int		numTris;
 	Triangle	*triangles = NULL;

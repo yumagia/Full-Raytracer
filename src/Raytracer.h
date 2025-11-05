@@ -4,7 +4,7 @@
 #include "Math.h"
 #include "scene/SceneLoader.h"
 
-bool HitCheckTriangle(Vec3f start, Vec3f dir, Triangle triangle, float tMax, float &tHit);
+bool HitCheckTriangle(Vec3f start, Vec3f dir, Triangle triangle, float tMax, float &tHit, float &u, float &v);
 bool HitCheckSphere(Vec3f start, Vec3f dir, float tMax, Vec3f spherePos, float r, float &tHit);
 bool HitCheckScene(Vec3f start, Vec3f dir, float tMax, Scene *scene);
 float GetFresnelFactor(float refractionCoeff1, float refractionCoeff2, Vec3f v, Vec3f n);

@@ -95,12 +95,14 @@ Scene *SceneLoader::ParseSceneFile(const char *fileName) {
 			else if(args[0] == "max_vertices:") {
 				raytracerScene->maxVertices = stoi(args[1]);
 				raytracerScene->vertexPool = new Vertex[raytracerScene->maxVertices];
+				std::cout << "Max vertices: " << raytracerScene->maxVertices << std::endl;
 				raytracerScene->vertexCount = 0;
 			}
 			else if(args[0] == "max_normals:") {
 				raytracerScene->maxNormals = stoi(args[1]);
 				raytracerScene->normalPool = new Normal[raytracerScene->maxNormals];
 				raytracerScene->normalCount = 0;
+				std::cout << "Max normals: " << raytracerScene->maxNormals << std::endl;
 			}
 			else if(args[0] == "vertex:") {
 				Vertex vertex = Vertex(stof(args[1]), stof(args[2]), stof(args[3]));
@@ -135,6 +137,8 @@ Scene *SceneLoader::ParseSceneFile(const char *fileName) {
 				normalTriangle.n2 = raytracerScene->normalPool[stoi(args[5])];
 				normalTriangle.n3 = raytracerScene->normalPool[stoi(args[6])];
 				normalTriangle.material = currentMaterial;
+
+				normalTriangle.useNormals = true;
 
 				// Pre-process the plane
 				normalTriangle.CreatePlane();

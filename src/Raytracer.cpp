@@ -16,8 +16,8 @@
 #define KQ 0.3
 
 #define MAX_T 5000
-#define RAY_EPS 0.0001		// Prevents acne
-#define PLANE_EQUALS_EPS 0.00001		// For parallel rays
+#define RAY_EPS 0.003		// Prevents acne
+#define PLANE_EQUALS_EPS 0.0000001		// For parallel rays
 
 // Return d for convenient checks
 Vec3f RayPlaneIntersection(Vec3f start, Vec3f dir, Plane plane, float &d) {
@@ -28,7 +28,7 @@ Vec3f RayPlaneIntersection(Vec3f start, Vec3f dir, Plane plane, float &d) {
 
 // Boolean hit check against triangle,
 // Passes a Vec3f intersection point
-bool HitCheckTriangle(Vec3f start, Vec3f dir, Triangle triangle, float tMax, float &tHit) {
+bool HitCheckTriangle(Vec3f start, Vec3f dir, Triangle triangle, float tMax, float &tHit, float &u, float &v) {
 
 	// Möller-Trumbore test
 	Vec3f e1 = triangle.v2 - triangle.v1;
@@ -44,22 +44,20 @@ bool HitCheckTriangle(Vec3f start, Vec3f dir, Triangle triangle, float tMax, flo
 
 	// Find u
 	Vec3f s = start - triangle.v1;
-	float u = detInverse * s.Dot(cross);
+	u = detInverse * s.Dot(cross);
 	if(u < 0 || u > 1) {
 		return false;
 	}
 
 	// Find v
 	Vec3f cross2 = s.Cross(e1);
-	float v = detInverse * dir.Dot(cross2);
+	v = detInverse * dir.Dot(cross2);
 	if(v < 0 || u + v > 1) {
 		return false;
 	}
 
 	tHit = detInverse * e2.Dot(cross2);
 	
-	//RayPlaneIntersection(start, dir, triangle.plane, tHit);
-
 	if(tHit > tMax) {	// We went too far
 		return false;
 	}
@@ -100,7 +98,8 @@ bool HitCheckScene(Vec3f start, Vec3f dir, float tMax, Scene *scene) {
 
 	if(scene->accelerate && scene->hasBvh) {
 		Triangle hitTriangle;
-		if(scene->bvh->RayBvh(start, dir, 0, tMax, tHit, hitTriangle)) {
+		float u, v;
+		if(scene->bvh->RayBvh(start, dir, 0, tMax, tHit, hitTriangle, u, v)) {
 			if(!(tHit < RAY_EPS)) {
 				return true;
 			}
@@ -108,7 +107,8 @@ bool HitCheckScene(Vec3f start, Vec3f dir, float tMax, Scene *scene) {
 	}
 	else {
 		for(Triangle triangle : scene->triangles) {
-			if(HitCheckTriangle(start, dir, triangle, tMax, tHit)) {
+			float u, v;
+			if(HitCheckTriangle(start, dir, triangle, tMax, tHit, u, v)) {
 				if(!(tHit < RAY_EPS)) {
 					return true;
 				}
@@ -159,8 +159,9 @@ Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool noR
 		
 			Vec3f rayReflected = ((2 * lightDir.Dot(n)) * n) - lightDir;
 			float specular = std::clamp(rayReflected.Dot(v), 0.f, 1.f);
+			specular = powf(specular, material.specularCoeff);
 
-			shade = shade + (directionalLight.intensity * material.diffuse * diffuse + directionalLight.intensity * material.specular * specular); 
+			shade = shade + (directionalLight.intensity * material.diffuse * diffuse) + (directionalLight.intensity * material.specular * specular); 
 		}
 	}
 
@@ -175,6 +176,7 @@ Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool noR
 			
 			Vec3f rayReflected = ((2 * lightDir.Dot(n)) * n) - lightDir;
 			float specular = powf(std::clamp(rayReflected.Dot(v), 0.f, 1.f), material.specularCoeff);
+			specular = powf(specular, material.specularCoeff);
 
 			float falloff = 1 / (KC + KL * dist + KQ * (dist * dist));
 			shade = shade + falloff * (material.diffuse * pointLight.intensity * diffuse + material.specular * pointLight.intensity * specular);
@@ -211,13 +213,12 @@ Color Shade(Vec3f v, Vec3f n, Vec3f p, Material material, Scene *scene, bool noR
 
 	}
 
-	//std::cout << "Ambient shade at completion: " << shade.g << std::endl;
+	shade = Color(std::clamp(shade.r, 0.f, 1.f), std::clamp(shade.g, 0.f, 1.f), std::clamp(shade.b, 0.f, 1.f)); 
 
 	return shade;
 }
 
 Color RayTraceScene(Vec3f start, Vec3f dir, Scene *scene, int depth) {
-
 	bool noRefract;
 	float tMax = MAX_T;
 	bool hit = false;
@@ -227,13 +228,20 @@ Color RayTraceScene(Vec3f start, Vec3f dir, Scene *scene, int depth) {
 
 	if(scene->accelerate && scene->hasBvh) {
 		Triangle hitTriangle;
-		if(scene->bvh->RayBvh(start, dir, 0, tMax, tHit, hitTriangle)) {
+		float uCoord, vCoord;
+		if(scene->bvh->RayBvh(start, dir, 0, tMax, tHit, hitTriangle, uCoord, vCoord)) {
 			if(!(tHit < RAY_EPS)) {
 				v = tHit * dir;					// Vector from eye to hit point
 				p = start + v;					// Hit point
-				n = hitTriangle.plane.normal;	// Triangle normal
-				if((n.Dot(start) - hitTriangle.plane.dist) < 0) {			// Flip if facing away from ray
-					n.Negate();
+				if(hitTriangle.useNormals) {
+					n = (uCoord * hitTriangle.n1) + (vCoord * hitTriangle.n2) + ((1 - uCoord - vCoord) * hitTriangle.n3);
+					n.Normalize();
+				}
+				else {
+					n = hitTriangle.plane.normal;	// Triangle normal
+					if((n.Dot(start) - hitTriangle.plane.dist) < 0) {			// Flip if facing away from ray
+						n.Negate();
+					}
 				}
 				material = hitTriangle.material;
 
@@ -246,16 +254,23 @@ Color RayTraceScene(Vec3f start, Vec3f dir, Scene *scene, int depth) {
 	}
 	else {
 		for(Triangle triangle : scene->triangles) {
-			if(HitCheckTriangle(start, dir, triangle, tMax, tHit)) {
-				if(!(tHit < RAY_EPS)) {
+			float uCoord, vCoord;
+			if(HitCheckTriangle(start, dir, triangle, tMax, tHit, uCoord, vCoord)) {
+				if(tHit > RAY_EPS) {
 					v = tHit * dir;				// Vector from eye to hit point
 					p = start + v;				// Hit point
-					n = triangle.plane.normal;	// Triangle normal
-					//std::cout << "Before flip: " << n.x << " " << n.y << " " << n.z << std::endl;
-					if((n.Dot(start) - triangle.plane.dist) < 0) {			// Flip if facing away from ray
-						n.Negate();
+
+					if(triangle.useNormals) {
+						n = (uCoord * triangle.n1) + (vCoord * triangle.n2) + ((1 - uCoord - vCoord) * triangle.n3);
+						n.Normalize();
 					}
-					//std::cout << "After flip: " << n.x << " " << n.y << " " << n.z << std::endl;
+					else {
+						n = triangle.plane.normal;	// Triangle normal
+						if((n.Dot(start) - triangle.plane.dist) < 0) {			// Flip if facing away from ray
+							n.Negate();
+						}
+					}
+
 					material = triangle.material;
 
 					tMax = tHit;
@@ -264,6 +279,7 @@ Color RayTraceScene(Vec3f start, Vec3f dir, Scene *scene, int depth) {
 				}
 			}
 		}
+
 	}
 
 
@@ -284,10 +300,8 @@ Color RayTraceScene(Vec3f start, Vec3f dir, Scene *scene, int depth) {
 
 	if(!hit) {
 		return scene->background;
-	} else {
-		//std::cout << "hit" << std::endl;
 	}
-	
+
 	// Since we got the closest hit data, we can now shade
 	
 	n.Normalize();
@@ -358,7 +372,7 @@ int main(int argc, char** argv) {
 	double start = omp_get_wtime();
 	double totalTime = 0;
 	Image outputImage = Image(raytracerScene->imageWidth, raytracerScene->imageHeight);
-	#pragma omp parallel for 
+	#pragma omp parallel for num_threads(12)
 	for(int j = 0; j < raytracerScene->imageHeight; j++) {
 		for(int i = 0; i < raytracerScene->imageWidth; i++) {
 			totalTime += RayTracePixel(i, j, camera, imgH, imgW, halfW, halfH, d, raytracerScene, &outputImage);
